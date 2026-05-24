@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>MyFirstProject</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    a {
+      color: #1a5fb4;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .brand {
+      padding: 10px 15px;
+    }
+    .logo {
+      font-weight: bold;
+      font-size: 22px;
+      color: #555;
+    }
+    .slogan {
+      font-size: 12px;
+      color: #888;
+    }
+    .menu {
+      display: flex;
+      flex-wrap: wrap;
+      background: #e9e9e9;
+      border-top: 1px solid #ccc;
+    }
+    .menu-item {
+      padding: 8px 14px;
+      font-size: 13px;
+      border-right: 1px solid #ccc;
+      color: #333;
+      cursor: pointer;
+    }
+    .react {
+      background: #61dafb;
+      color: #000;
+      font-weight: bold;
+    }
+    .body {
+      display: flex;
+    }
+    .side {
+      width: 220px;
+      background: #f4f4f4;
+      border-right: 1px solid #ccc;
+      padding: 10px;
+      min-height: 100vh;
+    }
+    .side-item {
+      display: block;
+      padding: 6px 4px;
+      font-size: 14px;
+      color: #1a5fb4;
+    }
+    .side-item.active {
+      font-weight: bold;
+    }
+    .content {
+      padding: 15px 25px;
+      flex: 1;
+    }
+    .updated {
+      color: #999;
+      font-size: 13px;
+    }
+    .block {
+      margin-bottom: 15px;
+    }
+    .block-title {
+      font-size: 17px;
+      font-weight: bold;
+    }
+    .crumbs {
+      font-size: 14px;
+    }
+    ul {
+      list-style: none;
+      padding-left: 15px;
+    }
+    li {
+      margin: 6px 0;
+    }
+  </style>
+
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@remix-run/router@1.23.0/dist/router.umd.js"></script>
+  <script src="https://unpkg.com/react-router@6.30.0/dist/umd/react-router.development.js"></script>
+  <script src="https://unpkg.com/react-router-dom@6.30.0/dist/umd/react-router-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const {
+      createHashRouter,
+      RouterProvider,
+      Link,
+      NavLink,
+      Outlet,
+      useLoaderData,
+      useRouteLoaderData
+    } = ReactRouterDOM;
+
+    const menu = ['C#', 'Java', 'Web', 'Python', 'C', 'C++', 'SQL', 'MongoDB', 'Go', 'VB.NET', 'Swift', 'ОС', 'F#', 'Хостинг'];
+
+    function guideLoader() {
+      return fetch('./data.json').then(res => res.json());
+    }
+
+    async function contentLoader({ params }) {
+      const guide = await fetch('./data.json').then(res => res.json());
+      const section = guide.sections.find(s => s.id === params.sectionId);
+      const topic = params.topicId ? section.topics.find(t => t.id === params.topicId) : null;
+      return { section, topic };
+    }
+
+    function Layout() {
+      const guide = useLoaderData();
+
+      return (
+        <div>
+          <div className="brand">
+            <div className="logo">METANIT.COM</div>
+            <div className="slogan">Сайт о программировании</div>
+          </div>
+          <div className="menu">
+            {menu.map(item => (
+              <span key={item} className="menu-item">{item}</span>
+            ))}
+            <Link to="/" className="menu-item react">React</Link>
+          </div>
+          <div className="body">
+            <aside className="side">
+              {guide.sections.map(s => (
+                <NavLink key={s.id} to={`/razdel/${s.id}`} className="side-item">
+                  📁 {s.title}
+                </NavLink>
+              ))}
+            </aside>
+            <main className="content">
+              <Outlet />
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    function Home() {
+      const guide = useRouteLoaderData('root');
+
+      return (
+        <div>
+          <h1>{guide.title}</h1>
+          <p className="updated">Последнее обновление: {guide.updated}</p>
+          {guide.sections.map(s => (
+            <div key={s.id} className="block">
+              <Link to={`/razdel/${s.id}`} className="block-title">{s.title}</Link>
+              <ul>
+                {s.topics.map(t => (
+                  <li key={t.id}>
+                    <Link to={`/razdel/${s.id}/${t.id}`}>{t.title}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    function Content() {
+      const { section, topic } = useLoaderData();
+
+      if (topic) {
+        return (
+          <div>
+            <p className="crumbs">
+              <Link to={`/razdel/${section.id}`}>{section.title}</Link>
+            </p>
+            <h1>{topic.title}</h1>
+            <p>{topic.content}</p>
+          </div>
+        );
+      }
+
+      return (
+        <div>
+          <h1>{section.title}</h1>
+          <ul>
+            {section.topics.map(t => (
+              <li key={t.id}>
+                <Link to={`/razdel/${section.id}/${t.id}`}>{t.title}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    const router = createHashRouter([
+      {
+        path: '/',
+        id: 'root',
+        element: <Layout />,
+        loader: guideLoader,
+        children: [
+          { index: true, element: <Home /> },
+          { path: 'razdel/:sectionId', element: <Content />, loader: contentLoader },
+          { path: 'razdel/:sectionId/:topicId', element: <Content />, loader: contentLoader }
+        ]
+      }
+    ]);
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<RouterProvider router={router} />);
+  </script>
+</body>
+</html>
